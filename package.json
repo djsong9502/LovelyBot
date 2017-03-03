@@ -1,0 +1,27 @@
+{
+  "name": "lovelybot",
+  "version": "1.0.0",
+  "description": "Bot for VSRG",
+  "main": "lovelybot.js",
+  "dependencies": {
+    "discord.js": "^11.0.0",
+    "express": "^4.14.1",
+    "mongod": "^2.0.0",
+    "mongodb": "^2.2.24"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node lovelybot.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/djsong9502/LovelyBot.git"
+  },
+  "author": "Lovely",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/djsong9502/LovelyBot/issues"
+  },
+  "homepage": "https://github.com/djsong9502/LovelyBot#readme"
+}
