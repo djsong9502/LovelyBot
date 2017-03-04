@@ -145,7 +145,6 @@ var gamble_credit = function(db, message, number, callback) {
           { user: message.author.id },
           { $inc: { credit: roll },
             $set: {
-              time: Date.now(),
               name: message.author.username
             },
           },
@@ -227,10 +226,7 @@ var buy_credit_with_gengaozo = function(db, message, number, callback) {
 
         credits_collection.update(
             { user: userID },
-            { $inc: { credit: number*100 },
-              $set: {
-                time: Date.now()
-              },
+            { $inc: { credit: number*100 }
             },
             { upsert: true },
             function(err, result) {
