@@ -54,11 +54,24 @@ var print_gengaozo_board = function(db, message, callback) {
       }
 
       for (i = 0; i < length; i++) {
-        board += ("{0}: {1} won {2} times.\n".format(i+1, docs[i].name, docs[i].score))
+        board += ("{0}: {1} has {2} geng points.\n".format(i+1, docs[i].name, docs[i].score))
       }
       board += "```"
       message.channel.sendMessage(board)
     });
+}
+
+var get_user_geng = function(db, message, user, callback) {
+  var userID = user.slice(2, user.length-1);
+  var collection = db.collection('gengaozo');
+
+  collection.findOne( { user: userID }, function(err, doc) {
+    if (doc) {
+      message.channel.sendMessage('{0} has {1} gengs'.format(user, doc.score))
+    } else {
+      message.channel.sendMessage('User is either invalid or has 0 gengs.')
+    }
+  });
 }
 
 //////////////////////////
@@ -117,7 +130,7 @@ var dailies = function(db, user, callback) {
 
 var print_credits_list = function(db, message, callback) {
   var collection = db.collection('credits');
-  collection.find().sort({score: -1}).toArray(function(err, docs) {
+  collection.find().sort({credit: -1}).toArray(function(err, docs) {
       var board = '```Credits Leaderboards\n---------------' +
         '-----------------------\n';
       var length;
@@ -145,6 +158,48 @@ var get_user_credit = function(db, message, user, callback) {
       message.channel.sendMessage('{0} has {1} credits'.format(user, doc.credit))
     } else {
       message.channel.sendMessage('User is either invalid or has 0 credits.')
+    }
+  });
+}
+
+var buy_credit_with_gengaozo = function(db, message, number, callback) {
+  var userID = message.author.id;
+  var geng_collection = db.collection('gengaozo');
+
+  geng_collection.findOne( { user: userID }, function(err, doc) {
+    if (doc) {
+      if (doc.score < number) {
+        message.channel.sendMessage('You don\'t have enough geng points to purchase that many.')
+      } else {
+        var credits_collection = db.collection('credits')
+        geng_collection.update(
+          { user: userID },
+          { $inc: { score: -number },
+            $set: {
+              time: Date.now()
+            }
+          },
+          { upsert: true },
+          function(err, result) {
+            callback(result);
+          });
+
+        credits_collection.update(
+            { user: userID },
+            { $inc: { credit: number*100 },
+              $set: {
+                time: Date.now()
+              },
+            },
+            { upsert: true },
+            function(err, result) {
+              callback(result);
+            });
+
+          message.channel.sendMessage('You sold {0} geng points for {1} credits!'.format(number, number*100))
+      }
+    } else {
+      message.channel.sendMessage('You don\'t have any geng points.')
     }
   });
 }
@@ -194,6 +249,8 @@ bot.on('message', message => {
     '!addq -> Add a quote to the VSRG discord group library!\n' +
     '!insane <dan> <stage> --> Displays song info in the corresponding dan/stage. If you don\'t supply stage, dan info is displayed\n' +
     '!geng<l> -> DOO DOO DOO JACKPOT (2% chance). Supply l after !geng to show leaderboards.\n' +
+    '!geng <user> -> Show geng points for user.\n' +
+    '!sellgeng <number> -> Sell geng points for credits. (1 geng = 100 credits)\n' +
     '!nong -> Try and get noooooong.\n' +
     '!dailies -> Get free daily credit!\n' +
     '!credit <user> -> Get credit count of user.\n' +
@@ -281,6 +338,15 @@ bot.on('message', message => {
     });
   }
 
+  if (message.content.startsWith('!geng ')) {
+    var user = message.content.toString().slice(6, message.content.length);
+    MongoClient.connect(url, function(err, db) {
+      get_user_geng(db, message, user, function() {
+        db.close();
+      });
+    });
+  }
+
   if (message.content === '!gengl') {
     MongoClient.connect(url, function(err, db) {
       print_gengaozo_board(db, message, function() {
@@ -313,7 +379,7 @@ bot.on('message', message => {
           var total_min_left = (86400000 - (Date.now() - doc.time)) / 1000 / 60
           var hour = Math.floor(total_min_left / 60)
           var minute = Math.floor(total_min_left % 60)
-          message.channel.sendMessage('Your dailies expire in {0} hours and {1} minutes'.format(hour, minute));
+          message.channel.sendMessage('You can do dailies again in {0} hours and {1} minutes'.format(hour, minute));
         } else {
           dailies(db, message.author, function() {
             message.channel.sendMessage('{0} You have just received 100 credits.'.format(message.author.toString()));
@@ -339,6 +405,21 @@ bot.on('message', message => {
         db.close();
       });
     });
+  }
+
+  if (message.content.startsWith('!sellgeng ')) {
+    number = message.content.toString().slice(10, message.content.length);
+
+    if (is_numeric(number) && !number.includes('.') && parseInt(number) > 0) {
+      MongoClient.connect(url, function(err, db) {
+        buy_credit_with_gengaozo(db, message, parseInt(number), function() {
+          db.close();
+        });
+      });
+    } else {
+      message.channel.sendMessage('Not valid number.');
+      return;
+    }
   }
 });
 
