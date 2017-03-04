@@ -126,6 +126,46 @@ var dailies = function(db, user, callback) {
     function(err, result) {
       callback(result);
     });
+  db.close()
+}
+
+var gamble_credit = function(db, message, number, callback) {
+  var collection = db.collection('credits');
+  var roll = number;
+
+  collection.findOne( { user: message.author.id }, function(err, doc) {
+    if (doc) {
+      var positive = Math.round(Math.random());
+      if (positive != 1) {
+        roll = -roll;
+      }
+
+      if (doc.credit >= number) {
+        collection.update(
+          { user: message.author.id },
+          { $inc: { credit: roll },
+            $set: {
+              time: Date.now(),
+              name: message.author.username
+            },
+          },
+          { upsert: true },
+          function(err, result) {
+            callback(result);
+          });
+        if (positive == 1) {
+          message.channel.sendMessage("{0}, you have won `{1}` credits!!".format(message.author.toString(), roll))
+        } else {
+          message.channel.sendMessage("{0}, you have lost `{1}` credits...".format(message.author.toString(), roll*-1))
+        }
+      } else {
+        message.channel.sendMessage('You don\'t have enough credits to bet that much.')
+      }
+    } else {
+      message.channel.sendMessage('You don\'t have any credits.')
+    }
+    db.close()
+  });
 }
 
 var print_credits_list = function(db, message, callback) {
@@ -159,6 +199,7 @@ var get_user_credit = function(db, message, user, callback) {
     } else {
       message.channel.sendMessage('User is either invalid or has 0 credits.')
     }
+    db.close()
   });
 }
 
@@ -201,6 +242,8 @@ var buy_credit_with_gengaozo = function(db, message, number, callback) {
     } else {
       message.channel.sendMessage('You don\'t have any geng points.')
     }
+
+    db.close()
   });
 }
 
@@ -250,11 +293,12 @@ bot.on('message', message => {
     '!insane <dan> <stage> --> Displays song info in the corresponding dan/stage. If you don\'t supply stage, dan info is displayed\n' +
     '!geng<l> -> DOO DOO DOO JACKPOT (2% chance). Supply l after !geng to show leaderboards.\n' +
     '!geng <user> -> Show geng points for user.\n' +
-    '!sellgeng <number> -> Sell geng points for credits. (1 geng = 100 credits)\n' +
+    '!sell <number> -> Sell geng points for credits. (1 geng = 100 credits)\n' +
     '!nong -> Try and get noooooong.\n' +
     '!dailies -> Get free daily credit!\n' +
-    '!credit <user> -> Get credit count of user.\n' +
-    '!creditl -> Get top 10 users with most credits\n```'
+    '!cd <user> -> Get credit count of user. Leave <user> blank for your own credit balance.\n' +
+    '!cdl -> Get top 10 users with most credits\n' +
+    '!bet <number> -> Bet that much amount. You can either win or lose that much amount.\n```'
     );
   }
 
@@ -390,7 +434,7 @@ bot.on('message', message => {
     });
   }
 
-  if (message.content === '!creditl') {
+  if (message.content === '!cdl') {
     MongoClient.connect(url, function(err, db) {
       print_credits_list(db, message, function() {
         db.close();
@@ -398,8 +442,16 @@ bot.on('message', message => {
     });
   }
 
-  if (message.content.startsWith('!credit ')) {
-    var user = message.content.toString().slice(8, message.content.length);
+  if (message.content === ('!cd')) {
+    MongoClient.connect(url, function(err, db) {
+      get_user_credit(db, message, message.author.toString(), function() {
+        db.close();
+      });
+    });
+  }
+
+  if (message.content.startsWith('!cd ')) {
+    var user = message.content.toString().slice(4, message.content.length);
     MongoClient.connect(url, function(err, db) {
       get_user_credit(db, message, user, function() {
         db.close();
@@ -407,8 +459,24 @@ bot.on('message', message => {
     });
   }
 
-  if (message.content.startsWith('!sellgeng ')) {
-    number = message.content.toString().slice(10, message.content.length);
+  if (message.content.startsWith('!bet ')) {
+    number = message.content.toString().slice(5, message.content.length);
+
+    if (is_numeric(number) && !number.includes('.') && parseInt(number) > 0) {
+      MongoClient.connect(url, function(err, db) {
+        gamble_credit(db, message, parseInt(number), function() {
+          db.close();
+        });
+      });
+    } else {
+      message.channel.sendMessage('Not valid number.');
+      return;
+    }
+  }
+
+
+  if (message.content.startsWith('!sell ')) {
+    number = message.content.toString().slice(6, message.content.length);
 
     if (is_numeric(number) && !number.includes('.') && parseInt(number) > 0) {
       MongoClient.connect(url, function(err, db) {
