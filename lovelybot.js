@@ -234,7 +234,7 @@ bot.on('message', message => {
     return;
   }
 
-  if (message.content.charAt(0) == '!') {
+  if (message.content.charAt(0) != '!') {
     return;
   }
 
@@ -308,7 +308,7 @@ bot.on('message', message => {
     }
   }
 
-    if (message.content === 'geng') {
+    if (message.content === '!geng') {
         MongoClient.connect(url, function(err, db) {
             var random_number = Math.floor(Math.random() * (25 + 1)) + 1;
             if (random_number === 1) {
