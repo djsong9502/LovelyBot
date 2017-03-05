@@ -13,7 +13,6 @@ var update_user_geng = function(user, inc, callback) {
             return;
         }
         var collection = db.collection('gengaozo');
-
         collection.findOne({ user : user }, function(err, doc) {
             if (err) {
                 db.close();
@@ -43,11 +42,22 @@ var update_user_geng = function(user, inc, callback) {
     });
 }
 
-var get_user_geng = function(db, user, callback) {
-    var collection = db.collection('gengaozo');
-
-    collection.findOne( { user: user }, function(err, doc) {
-        callback(err, doc)
+var get_user_geng = function(user, callback) {
+    MongoClient.connect(url, function(err, db) {
+        if (err) {
+            db.close();
+            callback(err);
+            return;
+        }
+        var collection = db.collection('gengaozo');
+        collection.findOne( { user: user }, function(err, doc) {
+            if (err) {
+                callback(err)
+            } else {
+                callback(err, doc)
+            }
+            db.close()
+        });
     });
 }
 
@@ -315,6 +325,7 @@ bot.on('message', message => {
     }
   }
 
+    // Done
     if (message.content === '!geng') {
         var random_number = Math.floor(Math.random() * (25 + 1)) + 1;
         if (random_number === 1) {
@@ -332,16 +343,22 @@ bot.on('message', message => {
         }
     }
 
+
+    // Done
     if (message.content.startsWith('!geng ')) {
         var user = message.content.toString().slice(8, message.content.length-1);
-        MongoClient.connect(url, function(err, db) {
-            get_user_geng(db, message, user, function() {
-                        if (doc) {
-            message.channel.sendMessage('{0} has {1} gengs'.format(user, doc.score))
-        } else {
-            message.channel.sendMessage('User is either invalid or has 0 gengs.')
-        }
-            });
+        var user_name = message.content.toString().slice(6, message.content.length);
+        get_user_geng(user, function(err, doc) {
+            if (err) {
+                console.log(err);
+                message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
+            } else {
+                if (doc) {
+                    message.channel.sendMessage('{0} has {1} gengs'.format(user_name, doc.score))
+                } else {
+                    message.channel.sendMessage('Couldn\'t find user in database.');
+                }
+            }
         });
     }
 
