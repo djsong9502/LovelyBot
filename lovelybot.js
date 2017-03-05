@@ -246,9 +246,9 @@ bot.on('message', message => {
     '!ql -> Show number of quotes in the server library.\n' +
     '!addq -> Add a quote to the VSRG discord group library!\n' +
     '!insane <dan> <stage> --> Displays song info in the corresponding dan/stage. If you don\'t supply stage, dan info is displayed\n' +
-    '!geng<l> -> DOO DOO DOO JACKPOT (2% chance). Supply l after !geng to show leaderboards.\n' +
+    '!geng -> DOO DOO DOO JACKPOT with 2% chance. Worth 100 credits.\n' +
     '!geng <user> -> Show geng points for user.\n' +
-    '!sell <number> -> Sell geng points for credits. (1 geng = 100 credits)\n' +
+    '!sellg <number> -> Sell geng points for credits.\n' +
     '!nong -> Try and get noooooong.\n' +
     '!dailies -> Get free daily credit!\n' +
     '!cd <user> -> Get credit count of user. Leave <user> blank for your own credit balance.\n' +
@@ -354,14 +354,6 @@ bot.on('message', message => {
     });
   }
 
-  if (message.content === '!gengl') {
-    MongoClient.connect(url, function(err, db) {
-      print_gengaozo_board(db, message, function() {
-        db.close();
-      });
-    });
-  }
-
   if (message.content === '!nong') {
     var random_number = Math.floor(Math.random() * (30 - 1 + 1)) + 1;
     nong = 'n';
@@ -438,8 +430,8 @@ bot.on('message', message => {
   }
 
 
-  if (message.content.startsWith('!sell ')) {
-    number = message.content.toString().slice(6, message.content.length);
+  if (message.content.startsWith('!sellg ')) {
+    number = message.content.toString().slice(7, message.content.length);
 
     if (is_numeric(number) && !number.includes('.') && parseInt(number) > 0) {
       MongoClient.connect(url, function(err, db) {
