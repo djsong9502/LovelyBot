@@ -6,93 +6,80 @@ const url = process.env.dburl;
 const token = process.env.bot_token;
 
 var update_user_geng = function(user, inc, callback) {
-    MongoClient.connect(url, function(err, db) {
-        if (err) {
-            db.close();
-            callback(err);
-            return;
-        }
+    MongoClient.connect(url, function(e, db) {
         var collection = db.collection('gengaozo');
-        collection.findOne({ user : user }, function(err, doc) {
-            if (err) {
-                db.close();
-                callback(err);
+        collection.findOne({ user : user }, function(e, doc) {
+            if (!doc) {
+                collection.update(
+                    { user: user },
+                    { $set: { score: inc } },
+                    { upsert: true },
+                    function(e, result) {
+                        db.close();
+                        callback(e, result);
+                });
             } else {
-                if (!doc) {
-                    collection.update(
-                        { user: user },
-                        { $set: { score: inc } },
-                        { upsert: true },
-                        function(err, result) {
-                            db.close();
-                            callback(err, result);
-                    });
-                } else {
-                    collection.update(
-                        { user: user },
-                        { $inc: { score: inc } },
-                        { upsert: true },
-                        function(err, result) {
-                            db.close();
-                            callback(err, result);
-                    });
-                }
+                collection.update(
+                    { user: user },
+                    { $inc: { score: inc } },
+                    { upsert: true },
+                    function(e, result) {
+                        db.close();
+                        callback(e, result);
+                });
             }
         });
     });
 }
 
 var get_user_geng = function(user, callback) {
-    MongoClient.connect(url, function(err, db) {
-        if (err) {
-            db.close();
-            callback(err);
-            return;
-        }
+    MongoClient.connect(url, function(e, db) {
         var collection = db.collection('gengaozo');
-        collection.findOne( { user: user }, function(err, doc) {
-            if (err) {
-                callback(err)
-            } else {
-                callback(err, doc)
-            }
+        collection.findOne( { user: user }, function(e, doc) {
             db.close()
+            callback(e, doc)
         });
     });
 }
 
-var add_quote = function(db, message, msg, callback) {
-  var collection = db.collection('quotes');
-  collection.findOne( { quote: msg } ,function(err, doc) {
-    if (doc) {
-      message.channel.sendMessage('Quote already in database!')
-    } else {
-      collection.insert(
-        { quote: msg},
-        function(err, result) {
-          callback(result);
+var add_quote = function(msg, callback) {
+    MongoClient.connect(url, function(e, db) {
+        var collection = db.collection('quotes');
+        collection.findOne( { quote: msg }, function(e, doc) {
+            if (doc) {
+                callback(e, false);
+            } else {
+                collection.insert(
+                    { quote: msg},
+                    function(e, result) {
+                        db.close();
+                        callback(e, true, result);
+                });
+            }
         });
-      message.channel.sendMessage('Added quote to library!');
-    }
-  });
-}
-
-var retrieve_quote = function(db, message, allback) {
-   var collection = db.collection('quotes');
-  collection.find().count(function (e, count) {
-    var r = Math.floor(Math.random() * count);
-
-    var random = collection.find().toArray(function (err, docs) {
-      message.channel.sendMessage(docs[r].quote);
     });
-  });
 }
 
-var count_quote = function(db, message, allback) {
-  var collection = db.collection('quotes');
-  collection.find().count(function (e, count) {
-      message.channel.sendMessage("Total of {0} quotes!".format(count))
-  });
+var get_quote = function(callback) {
+    MongoClient.connect(url, function(e, db) {
+        var collection = db.collection('quotes');
+        collection.find().count(function (e, count) {
+            var r = Math.floor(Math.random() * count);
+            collection.find().toArray(function (e, docs) {
+                db.close();
+                callback(e, docs[r]);
+            });
+        });
+    });
+}
+
+var count_quote = function(callback) {
+    MongoClient.connect(url, function(e, db) {
+        var collection = db.collection('quotes');
+        collection.find().count(function (e, count) {
+            callback(e, count);
+        });
+    });
 }
 
 var dailies = function(db, user, callback) {
@@ -276,30 +263,43 @@ bot.on('message', message => {
 
   //////////////////
   // QUOTE COMMANDS
-  if (message.content === '!q') {
-    MongoClient.connect(url, function(err, db) {
-      retrieve_quote(db, message, function() {
-        db.close();
-      });
-    });
-  }
+    if (message.content === '!q') {
+        get_quote(function(e, doc) {
+            if (e) {
+                console.log(e);
+                message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
+            } else {
+                message.channel.sendMessage(doc.quote);
+            }
+        });
+    }
 
-  if (message.content === '!ql') {
-    MongoClient.connect(url, function(err, db) {
-      count_quote(db, message, function() {
-        db.close();
-      });
-    });
-  }
+    if (message.content === '!ql') {
+        count_quote(function(e, count) {
+            if (e) {
+                console.log(e);
+                message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
+            } else {
+                message.channel.sendMessage("Total of {0} quotes!".format(count))
+            }
+        });
+    }
 
-  if (message.content.startsWith('!addq ')) {
-    var msg = message.content.toString().slice(6, message.content.length);
-    MongoClient.connect(url, function(err, db) {
-      add_quote(db, message, msg, function() {
-        db.close();
-      });
-    });
-  }
+    if (message.content.startsWith('!addq ')) {
+        var msg = message.content.toString().slice(6, message.content.length);
+        add_quote(msg, function(e, added, result) {
+            if (e) {
+                console.log(e);
+                message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
+            } else {
+                if (added) {
+                    message.channel.sendMessage('Added quote to library!');
+                } else {
+                    message.channel.sendMessage('Quote already in database!')
+                }
+            }
+        });
+    }
 
   //////////////////////
   // DAN INFO COMMANDS
@@ -329,9 +329,9 @@ bot.on('message', message => {
     if (message.content === '!geng') {
         var random_number = Math.floor(Math.random() * (25 + 1)) + 1;
         if (random_number === 1) {
-            update_user_geng(message.author.id, 1, function(err, result) {
-                if (err) {
-                    console.log(err);
+            update_user_geng(message.author.id, 1, function(e, result) {
+                if (e) {
+                    console.log(e);
                     message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
                 } else {
                     message.channel.sendMessage('{0} DOO DOO DOO DOO DOO DOO **JACKPOT YOU GOT 6 DOOS**'.
@@ -348,9 +348,9 @@ bot.on('message', message => {
     if (message.content.startsWith('!geng ')) {
         var user = message.content.toString().slice(8, message.content.length-1);
         var user_name = message.content.toString().slice(6, message.content.length);
-        get_user_geng(user, function(err, doc) {
-            if (err) {
-                console.log(err);
+        get_user_geng(user, function(e, doc) {
+            if (e) {
+                console.log(e);
                 message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
             } else {
                 if (doc) {
