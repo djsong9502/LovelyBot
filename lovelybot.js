@@ -107,9 +107,6 @@ var gamble_credit = function(db, message, number, callback) {
         collection.update(
           { user: message.author.id },
           { $inc: { credit: roll },
-            $set: {
-              name: message.author.username
-            },
           },
           { upsert: true },
           function(err, result) {
