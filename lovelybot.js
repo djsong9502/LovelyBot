@@ -1,81 +1,46 @@
-////////////////////
-// MONGO DB STUFF //
-////////////////////
+const MongoClient = require('mongodb').MongoClient,assert = require('assert');
+const Discord = require('discord.js');
+const url = process.env.dburl;
+const bot = new Discord.Client();
+const token = process.env.bot_token;
 
-var MongoClient = require('mongodb').MongoClient
-  , assert = require('assert');
+var update_gengaozo_user = function(db, user, inc, callback) {
+    var collection = db.collection('gengaozo');
 
-var url = process.env.dburl;
-
-//////////////////////////
-// Gengaozo leaderboards
-var update_gengaozo_user = function(db, user, callback) {
-  var collection = db.collection('gengaozo');
-  collection.update(
-    { user: user.id },
-    { $inc: { score: 1 },
-      $set: {
-        time: Date.now(),
-        name: user.username
-      }
-    },
-    { upsert: true },
-    function(err, result) {
-      callback(result);
-    });
-}
-
-var update_gengaozo_user_no_inc = function(db, user, callback) {
-  var collection = db.collection('gengaozo');
-  collection.update(
-    { user: user.id },
-    { $set: {
-        time: Date.now(),
-        name: user.username
-      }
-    },
-    { upsert: true },
-    function(err, result) {
-      callback(result);
-    });
-}
-
-var print_gengaozo_board = function(db, message, callback) {
-  var collection = db.collection('gengaozo');
-  collection.find().sort({score: -1}).toArray(function(err, docs) {
-      var board = '```Gengaozo Leaderboards\n---------------' +
-        '-----------------------\n';
-      var length;
-
-      if (docs.length >= 10) {
-        length = 10;
-      } else {
-        length = docs.length;
-      }
-
-      for (i = 0; i < length; i++) {
-        board += ("{0}: {1} has {2} geng points.\n".format(i+1, docs[i].name, docs[i].score))
-      }
-      board += "```"
-      message.channel.sendMessage(board)
-    });
+    collection.findOne({ user : user }, function(err, doc) {
+        if (err) {
+            callback(err)
+        } else {
+            if (doc && Date.now() - doc.time < 1000) {
+                callback(err, true)
+            } else {
+                collection.update(
+                    { user: user },
+                    { $inc: { score: inc },
+                      $set: { time: Date.now() }
+                    },
+                    { upsert: true },
+                    function(err, result) {            
+                        callback(err, false, result);
+                });
+            }
+        }
+    }); 
 }
 
 var get_user_geng = function(db, message, user, callback) {
-  var userID = user.slice(2, user.length-1);
-  var collection = db.collection('gengaozo');
+    var userID = user.slice(2, user.length-1);
+    var collection = db.collection('gengaozo');
 
-  collection.findOne( { user: userID }, function(err, doc) {
-    if (doc) {
-      message.channel.sendMessage('{0} has {1} gengs'.format(user, doc.score))
-    } else {
-      message.channel.sendMessage('User is either invalid or has 0 gengs.')
-    }
-  });
+    collection.findOne( { user: userID }, function(err, doc) {
+        if (doc) {
+            message.channel.sendMessage('{0} has {1} gengs'.format(user, doc.score))
+        } else {
+            message.channel.sendMessage('User is either invalid or has 0 gengs.')
+        }
+    });
 }
 
-//////////////////////////
-// Quote db
 var add_quote = function(db, message, msg, callback) {
   var collection = db.collection('quotes');
   collection.findOne( { quote: msg } ,function(err, doc) {
@@ -93,7 +58,7 @@ var add_quote = function(db, message, msg, callback) {
 }
 
 var retrieve_quote = function(db, message, allback) {
-  var collection = db.collection('quotes');
+   var collection = db.collection('quotes');
   collection.find().count(function (e, count) {
     var r = Math.floor(Math.random() * count);
 
@@ -110,8 +75,6 @@ var count_quote = function(db, message, allback) {
   });
 }
 
-//////////////////////////
-// Dailies db
 var dailies = function(db, user, callback) {
   var collection = db.collection('credits');
   collection.update(
@@ -261,10 +224,6 @@ String.prototype.format = function () {
 //////////////////////////
 // ACTUAL DISCORD STUFF //
 //////////////////////////
-const Discord = require('discord.js');
-const bot = new Discord.Client();
-const token = process.env.bot_token;
-
 bot.on('ready', () => {
   console.log('LovelyBot is ready!');
 });
@@ -275,7 +234,7 @@ bot.on('message', message => {
     return;
   }
 
-  if (message.content.charAt(0) != '!') {
+  if (message.content.charAt(0) == '!') {
     return;
   }
 
@@ -349,34 +308,42 @@ bot.on('message', message => {
     }
   }
 
-  //////////////////////
-  // GENG/NONG COMMANDS
-  if (message.content === '!geng') {
-    MongoClient.connect(url, function(err, db) {
-      var collection = db.collection('gengaozo');
-      collection.findOne({ user : message.author.id }, function(err, doc) {
-        if (doc && Date.now() - doc.time < 750) {
-          message.channel.sendMessage('Too fast :( Wait for a bit.');
-          db.close();
-        } else {
-            var random_number = Math.floor(Math.random() * (25 + 1)) + 0;
-            if (random_number == 1) {
-              message.channel.sendMessage('{0} DOO DOO DOO DOO DOO DOO **JACKPOT YOU GOT 6 DOOS**'.
-              format(message.author.toString()));
+    if (message.content === 'geng') {
+        MongoClient.connect(url, function(err, db) {
+            var random_number = Math.floor(Math.random() * (25 + 1)) + 1;
+            if (random_number === 1) {
+                update_gengaozo_user(db, message.author.id, 1, function(err, spam, result) {
+                    if (err) {
+                        console.log(err);
+                        message.channel.sendMessage('An error Occurred. Please check the logs <@185885180408496128>');
+                    } else {
+                        if (!spam) {
+                            message.channel.sendMessage('{0} DOO DOO DOO DOO DOO DOO **JACKPOT YOU GOT 6 DOOS**'.
+                            format(message.author.toString()));
+                        } else {
+                            message.channel.sendMessage('You\'re sending commands too fast :(');
+                        }
+                    }
+                    db.close();
+                });
 
-              update_gengaozo_user(db, message.author, function() {
-                db.close();
-              });
-          } else {
-              update_gengaozo_user_no_inc(db, message.author, function() {
-                db.close();
-              });
-              message.channel.sendMessage('DOO DOO DOO DOO DOOs');
+            } else {
+                update_gengaozo_user(db, message.author.id, 0, function(err, spam, result) {
+                    if (err) {
+                        console.log(err);
+                        message.channel.sendMessage('An error Occurred. Please check the logs <@185885180408496128>');
+                    } else {
+                        if (!spam) {
+                            message.channel.sendMessage('DOO DOO DOO DOO DOO');
+                        } else {
+                            message.channel.sendMessage('You\'re sending commands too fast :(');
+                        }
+                    }
+                    db.close();
+                });            
             }
-          }
         });
-    });
-  }
+    }
 
   if (message.content.startsWith('!geng ')) {
     var user = message.content.toString().slice(6, message.content.length);
