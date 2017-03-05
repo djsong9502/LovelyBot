@@ -1,43 +1,53 @@
-const MongoClient = require('mongodb').MongoClient,assert = require('assert');
+const MongoClient = require('mongodb').
+    MongoClient,assert = require('assert');
 const Discord = require('discord.js');
-const url = process.env.dburl;
 const bot = new Discord.Client();
+const url = process.env.dburl;
 const token = process.env.bot_token;
 
-var update_gengaozo_user = function(db, user, inc, callback) {
-    var collection = db.collection('gengaozo');
-
-    collection.findOne({ user : user }, function(err, doc) {
+var update_user_geng = function(user, inc, callback) {
+    MongoClient.connect(url, function(err, db) {
         if (err) {
-            callback(err)
-        } else {
-            if (doc && Date.now() - doc.time < 1000) {
-                callback(err, true)
-            } else {
-                collection.update(
-                    { user: user },
-                    { $inc: { score: inc },
-                      $set: { time: Date.now() }
-                    },
-                    { upsert: true },
-                    function(err, result) {            
-                        callback(err, false, result);
-                });
-            }
+            db.close();
+            callback(err);
+            return;
         }
-    }); 
+        var collection = db.collection('gengaozo');
+
+        collection.findOne({ user : user }, function(err, doc) {
+            if (err) {
+                db.close();
+                callback(err);
+            } else {
+                if (!doc) {
+                    collection.update(
+                        { user: user },
+                        { $set: { score: inc } },
+                        { upsert: true },
+                        function(err, result) {
+                            db.close();
+                            callback(err, result);
+                    });
+                } else {
+                    collection.update(
+                        { user: user },
+                        { $inc: { score: inc } },
+                        { upsert: true },
+                        function(err, result) {
+                            db.close();
+                            callback(err, result);
+                    });
+                }
+            }
+        });
+    });
 }
 
-var get_user_geng = function(db, message, user, callback) {
-    var userID = user.slice(2, user.length-1);
+var get_user_geng = function(db, user, callback) {
     var collection = db.collection('gengaozo');
 
-    collection.findOne( { user: userID }, function(err, doc) {
-        if (doc) {
-            message.channel.sendMessage('{0} has {1} gengs'.format(user, doc.score))
-        } else {
-            message.channel.sendMessage('User is either invalid or has 0 gengs.')
-        }
+    collection.findOne( { user: user }, function(err, doc) {
+        callback(err, doc)
     });
 }
 
@@ -306,50 +316,34 @@ bot.on('message', message => {
   }
 
     if (message.content === '!geng') {
-        MongoClient.connect(url, function(err, db) {
-            var random_number = Math.floor(Math.random() * (25 + 1)) + 1;
-            if (random_number === 1) {
-                update_gengaozo_user(db, message.author.id, 1, function(err, spam, result) {
-                    if (err) {
-                        console.log(err);
-                        message.channel.sendMessage('An error Occurred. Please check the logs <@185885180408496128>');
-                    } else {
-                        if (!spam) {
-                            message.channel.sendMessage('{0} DOO DOO DOO DOO DOO DOO **JACKPOT YOU GOT 6 DOOS**'.
-                            format(message.author.toString()));
-                        } else {
-                            message.channel.sendMessage('You\'re sending commands too fast :(');
-                        }
-                    }
-                    db.close();
-                });
-
-            } else {
-                update_gengaozo_user(db, message.author.id, 0, function(err, spam, result) {
-                    if (err) {
-                        console.log(err);
-                        message.channel.sendMessage('An error Occurred. Please check the logs <@185885180408496128>');
-                    } else {
-                        if (!spam) {
-                            message.channel.sendMessage('DOO DOO DOO DOO DOO');
-                        } else {
-                            message.channel.sendMessage('You\'re sending commands too fast :(');
-                        }
-                    }
-                    db.close();
-                });            
-            }
-        });
+        var random_number = Math.floor(Math.random() * (25 + 1)) + 1;
+        if (random_number === 1) {
+            update_user_geng(message.author.id, 1, function(err, result) {
+                if (err) {
+                    console.log(err);
+                    message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
+                } else {
+                    message.channel.sendMessage('{0} DOO DOO DOO DOO DOO DOO **JACKPOT YOU GOT 6 DOOS**'.
+                    format(message.author.toString()));
+                }
+            });
+        } else {
+            message.channel.sendMessage('DOO DOO DOO DOO DOO');
+        }
     }
 
-  if (message.content.startsWith('!geng ')) {
-    var user = message.content.toString().slice(6, message.content.length);
-    MongoClient.connect(url, function(err, db) {
-      get_user_geng(db, message, user, function() {
-        db.close();
-      });
-    });
-  }
+    if (message.content.startsWith('!geng ')) {
+        var user = message.content.toString().slice(8, message.content.length-1);
+        MongoClient.connect(url, function(err, db) {
+            get_user_geng(db, message, user, function() {
+                        if (doc) {
+            message.channel.sendMessage('{0} has {1} gengs'.format(user, doc.score))
+        } else {
+            message.channel.sendMessage('User is either invalid or has 0 gengs.')
+        }
+            });
+        });
+    }
 
   if (message.content === '!nong') {
     var random_number = Math.floor(Math.random() * (30 - 1 + 1)) + 1;
