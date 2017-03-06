@@ -1,7 +1,9 @@
 # LovelyBot
 
-Discord bot written in node.js\n
+Discord bot written in node.js
+
 Connects to mongodb and run on heroku.
+
 ### Commands
 
 + !q -> Picks a random quote from this server.
