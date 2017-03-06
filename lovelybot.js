@@ -122,11 +122,15 @@ var bet_credit = function(user, number, callback) {
                       },
                       { upsert: true },
                       function(e, result) {
+                        db.close();
                         callback(e, true, win > 0);
                     });   
+                } else {
+                    callback(e, false);
                 }
-            } 
-            callback(e, false);
+            } else {
+                callback(e,false);
+            }
         });
     });
 }
