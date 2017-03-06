@@ -142,14 +142,7 @@ var print_credits_list = function(callback) {
         collection.find().sort({credit: -1}).toArray(function(e, docs) {
             var board = '```Credits Leaderboards\n---------------' +
                 '-----------------------\n';
-            var length;
-
-            if (docs.length >= 10) {
-                length = 10;
-            } else {
-                length = docs.length;
-            }
-
+            var length = docs.length >=10 ? 10 : docs.length;
             for (i = 0; i < length; i++) {
                 board += ('{0}: {1} has {2} credits.\n'.format(i+1, docs[i].name, docs[i].credit));
             }

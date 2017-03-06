@@ -1,6 +1,6 @@
 # LovelyBot
 
-Discord bot written in node.js
+Discord bot written in node.js\n
 Connects to mongodb and run on heroku.
 ### Commands
 
