@@ -47,6 +47,7 @@ var add_quote = function(msg, callback) {
         var collection = db.collection('quotes');
         collection.findOne( { quote: msg }, function(e, doc) {
             if (doc) {
+                db.close();
                 callback(e, false);
             } else {
                 collection.insert(
@@ -77,61 +78,57 @@ var count_quote = function(callback) {
     MongoClient.connect(url, function(e, db) {
         var collection = db.collection('quotes');
         collection.find().count(function (e, count) {
+            db.close();
             callback(e, count);
         });
     });
 }
 
-var dailies = function(db, user, callback) {
-  var collection = db.collection('credits');
-  collection.update(
-    { user: user.id },
-    { $inc: { credit: 100 },
-      $set: {
-        time: Date.now(),
-        name: user.username
-      },
-    },
-    { upsert: true },
-    function(err, result) {
-      callback(result);
+var dailies = function(user, callback) {
+    MongoClient.connect(url, function(e, db) {
+        var collection = db.collection('credits');
+        collection.findOne({ user : user }, function(e, doc) {
+            if (doc && Date.now() - doc.time < 86400000) {
+                var total_min_left = (86400000 - (Date.now() - doc.time)) / 60000;
+                var hour = Math.floor(total_min_left / 60);
+                var minute = Math.floor(total_min_left % 60);
+                db.close();
+                callback(e, false, [hour, minute]);
+            } else {
+                collection.update(
+                    { user: user },
+                    { $inc: { credit: 300 },
+                      $set: { time: Date.now() } },
+                    { upsert: true },
+                    function(e, result) {
+                        db.close();
+                        callback(e, true);
+                });
+            }
+        });
     });
-  db.close()
 }
 
-var gamble_credit = function(db, message, number, callback) {
-  var collection = db.collection('credits');
-  var roll = number;
-
-  collection.findOne( { user: message.author.id }, function(err, doc) {
-    if (doc) {
-      var positive = Math.round(Math.random());
-      if (positive != 1) {
-        roll = -roll;
-      }
-
-      if (doc.credit >= number) {
-        collection.update(
-          { user: message.author.id },
-          { $inc: { credit: roll },
-          },
-          { upsert: true },
-          function(err, result) {
-            callback(result);
-          });
-        if (positive == 1) {
-          message.channel.sendMessage("{0}, you have won `{1}` credits!!".format(message.author.toString(), roll))
-        } else {
-          message.channel.sendMessage("{0}, you have lost `{1}` credits...".format(message.author.toString(), roll*-1))
-        }
-      } else {
-        message.channel.sendMessage('You don\'t have enough credits to bet that much.')
-      }
-    } else {
-      message.channel.sendMessage('You don\'t have any credits.')
-    }
-    db.close()
-  });
+var bet_credit = function(user, number, callback) {
+    MongoClient.connect(url, function(e, db) {
+        var collection = db.collection('credits');
+        collection.findOne( { user: user }, function(e, doc) {
+            if (doc) {
+                if (doc.credit >= number) {
+                    var win = Math.round(Math.random()) ? number : -number;
+                    collection.update(
+                      { user: message.author.id },
+                      { $inc: { credit: win },
+                      },
+                      { upsert: true },
+                      function(e, result) {
+                        callback(e, true, win > 0);
+                    });   
+                }
+            } 
+            callback(e, false);
+        });
+    });
 }
 
 var print_credits_list = function(db, message, callback) {
@@ -292,11 +289,9 @@ bot.on('message', message => {
                 console.log(e);
                 message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
             } else {
-                if (added) {
-                    message.channel.sendMessage('Added quote to library!');
-                } else {
-                    message.channel.sendMessage('Quote already in database!')
-                }
+                var msg = added ? 'Added quote to library!' : 
+                    'Quote already in database!';
+                message.channel.sendMessage(msg);
             }
         });
     }
@@ -353,11 +348,9 @@ bot.on('message', message => {
                 console.log(e);
                 message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
             } else {
-                if (doc) {
-                    message.channel.sendMessage('{0} has {1} gengs'.format(user_name, doc.score))
-                } else {
-                    message.channel.sendMessage('Couldn\'t find user in database.');
-                }
+                var msg = doc ? '{0} has {1} gengs'.format(user_name, doc.score) :
+                    'Couldn\'t find user in database.';
+                message.channel.sendMessage(msg);
             }
         });
     }
@@ -378,24 +371,22 @@ bot.on('message', message => {
 
   /////////////////////////////
   // CREDITS COMMANDS
-  if (message.content === '!dailies') {
-    MongoClient.connect(url, function(err, db) {
-      var collection = db.collection('credits');
-      collection.findOne({ user : message.author.id }, function(err, doc) {
-        if (doc && Date.now() - doc.time < 86400000) {
-          var total_min_left = (86400000 - (Date.now() - doc.time)) / 1000 / 60
-          var hour = Math.floor(total_min_left / 60)
-          var minute = Math.floor(total_min_left % 60)
-          message.channel.sendMessage('You can do dailies again in {0} hours and {1} minutes'.format(hour, minute));
-        } else {
-          dailies(db, message.author, function() {
-            message.channel.sendMessage('{0} You have just received 100 credits.'.format(message.author.toString()));
-          });
-        }
-        db.close();
-      });
-    });
-  }
+    if (message.content === '!dailies') {
+        dailies(message.author.id, function(e, added, time) {
+            if (e) {
+                console.log(e);
+                message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
+            } else {
+                if (added) {
+                    var hour = time[0];
+                    var min = time[1];
+                }
+                var msg = added ? '{0} You have just received 300 credits.'.format(message.author.toString()) :
+                    'You can do dailies again in {0} hours and {1} minutes'.format(hour, min);
+                message.channel.sendMessage(msg);
+            }
+        });
+    }
 
   if (message.content === '!cdl') {
     MongoClient.connect(url, function(err, db) {
@@ -422,20 +413,28 @@ bot.on('message', message => {
     });
   }
 
-  if (message.content.startsWith('!bet ')) {
-    number = message.content.toString().slice(5, message.content.length);
+    if (message.content.startsWith('!bet ')) {
+        number = message.content.toString().slice(5, message.content.length);
 
-    if (is_numeric(number) && !number.includes('.') && parseInt(number) > 0) {
-      MongoClient.connect(url, function(err, db) {
-        gamble_credit(db, message, parseInt(number), function() {
-          db.close();
-        });
-      });
-    } else {
-      message.channel.sendMessage('Not valid number.');
-      return;
+        if (is_numeric(number) && !number.includes('.') && parseInt(number) > 0) {
+            bet_credit(message.author.id, parseInt(number), function(e, valid, win) {
+                if (e) {
+                    console.log(e);
+                    message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
+                } else {
+                    if (!valid) {
+                      message.channel.sendMessage('You don\'t have enough credits to bet that much.');
+                    } else {
+                        var msg = win ? "{0}, you have won `{1}` credits!!".format(message.author.toString(), number) :
+                            "{0}, you have lost `{1}` credits...".format(message.author.toString(), number);
+                        message.channel.sendMessage(msg);
+                    }    
+                }
+            });
+        } else {
+          message.channel.sendMessage('Not valid number.');
+        }
     }
-  }
 
 
   if (message.content.startsWith('!sellg ')) {
