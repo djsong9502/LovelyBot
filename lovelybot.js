@@ -117,7 +117,7 @@ var bet_credit = function(user, number, callback) {
                 if (doc.credit >= number) {
                     var win = Math.round(Math.random()) ? number : -number;
                     collection.update(
-                      { user: message.author.id },
+                      { user: user },
                       { $inc: { credit: win },
                       },
                       { upsert: true },
