@@ -20,7 +20,7 @@ bot.on('ready', () => {
 
 bot.on('message', message => {
 
-    if (message.author.id === "282890520672600065") {
+    if (message.author.id === '282890520672600065') {
         return message;
     }
 
