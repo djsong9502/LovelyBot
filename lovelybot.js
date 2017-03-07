@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const db = require('./db.js');
 const bot = new Discord.Client();
 const token = process.env.bot_token;
+const command_prefix = process.env.bot_command;
 
 String.prototype.format = function () {
     var args = [].slice.call(arguments);
@@ -20,11 +21,11 @@ bot.on('message', message => {
         return;
     }
 
-    if (message.content.charAt(0) != '!') {
+    if (message.content.charAt(0) != command_prefix) {
         return;
     }
 
-    if (message.content === '!help') {
+    if (message.content === '{0}help'.format(command_prefix)) {
         message.channel.sendMessage('```★List of commands★\n-------------------------' + 
             '----------------------------------\n' +
             '!q -> Picks a random quote from this server.\n' +
@@ -43,7 +44,7 @@ bot.on('message', message => {
         );
     }
 
-    if (message.content === '!q') {
+    if (message.content === '{0}q'.format(command_prefix)) {
         db.get_quote(function(e, doc) {
             if (e) {
                 console.log(e);
@@ -54,7 +55,7 @@ bot.on('message', message => {
         });
     }
 
-    if (message.content === '!ql') {
+    if (message.content === '{0}ql'.format(command_prefix)) {
         db.count_quote(function(e, count) {
             if (e) {
                 console.log(e);
@@ -65,7 +66,7 @@ bot.on('message', message => {
         });
     }
 
-    if (message.content.startsWith('!addq ')) {
+    if (message.content.startsWith('{0}addq '.format(command_prefix))) {
         var msg = message.content.toString().slice(6, message.content.length);
         db.add_quote(msg, function(e, added, result) {
             if (e) {
@@ -79,7 +80,7 @@ bot.on('message', message => {
         });
     }
 
-    if (message.content === '!geng') {
+    if (message.content === '{0}geng'.format(command_prefix)) {
         var random_number = Math.floor(Math.random()*(20+1)) + 1;
         if (random_number === 1) {
             db.update_user_points('geng', message.author.id, 1, function(e, result) {
@@ -96,7 +97,7 @@ bot.on('message', message => {
         }
     }
 
-    if (message.content.startsWith('!geng ')) {
+    if (message.content.startsWith('{0}geng '.format(command_prefix))) {
         var user = message.content.toString().slice(8, message.content.length-1);
         var user_name = message.content.toString().slice(6, message.content.length);
         db.get_user_points('geng', user, function(e, doc) {
@@ -111,7 +112,7 @@ bot.on('message', message => {
         });
     }
 
-    if (message.content === '!nong') {
+    if (message.content === '{0}nong'.format(command_prefix)) {
         var random_number = Math.floor(Math.random()*(10+1)) + 1;
         var nong = 'n';
         for(i = 0; i < random_number; i++) {
@@ -134,7 +135,7 @@ bot.on('message', message => {
         }
     }
 
-    if (message.content.startsWith('!nong ')) {
+    if (message.content.startsWith('{0}nong '.format(command_prefix))) {
         var user = message.content.toString().slice(8, message.content.length-1);
         var user_name = message.content.toString().slice(6, message.content.length);
         db.get_user_points('nong', user, function(e, doc) {
@@ -149,7 +150,7 @@ bot.on('message', message => {
         });
     }
 
-    if (message.content === '!dailies') {
+    if (message.content === '{0}dailies'.format(command_prefix)) {
         db.dailies(message.author.id, function(e, added, time) {
             if (e) {
                 console.log(e);
@@ -168,7 +169,7 @@ bot.on('message', message => {
         });
     }
 
-    if (message.content === '!cdl') {
+    if (message.content === '{0}cdl'.format(command_prefix)) {
         db.print_credits_list(function(e, board) {
             if (e) {
                 console.log(e);
@@ -179,7 +180,7 @@ bot.on('message', message => {
         });
     }
 
-    if (message.content === ('!cd')) {
+    if (message.content === ('{0}cd'.format(command_prefix))) {
         db.get_user_credit(message.author.id, function(e, doc) {
             if (e) {
                 console.log(e);
@@ -192,7 +193,7 @@ bot.on('message', message => {
         });
     }
 
-    if (message.content.startsWith('!cd ')) {
+    if (message.content.startsWith('{0}cd '.format(command_prefix))) {
         var user = message.content.toString().slice(6, message.content.length-1);
         var user_name = message.content.toString().slice(4, message.content.length);
         db.get_user_credit(user, function(e, doc) {
@@ -207,7 +208,7 @@ bot.on('message', message => {
         });
     }
 
-    if (message.content.startsWith('!bet ')) {
+    if (message.content.startsWith('{0}bet '.format(command_prefix))) {
         number = message.content.toString().slice(5, message.content.length);
 
         if (!isNaN(number) && !number.includes('.') && parseInt(number) > 0) {
@@ -230,7 +231,7 @@ bot.on('message', message => {
         }
     }
 
-    if (message.content.startsWith('!sellg ')) {
+    if (message.content.startsWith('{0}sellg '.format(command_prefix))) {
         number = message.content.toString().slice(7, message.content.length);
 
         if (!isNaN(number) && !number.includes('.') && parseInt(number) > 0) {
@@ -253,7 +254,7 @@ bot.on('message', message => {
         }
     }
 
-    if (message.content.startsWith('!selln ')) {
+    if (message.content.startsWith('{0}selln '.format(command_prefix))) {
         number = message.content.toString().slice(7, message.content.length);
 
         if (!isNaN(number) && !number.includes('.') && parseInt(number) > 0) {
