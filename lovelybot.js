@@ -241,7 +241,7 @@ bot.on('message', message => {
                 } else {
                     if (cd) {
                         var msg = !enough ? 'You don\'t have enough geng points to purchase that many.':
-                            'You sold {0} geng points for {1} credits!'.format(number, Math.floor(number*100*Math.pow(1.1,number-1)));
+                            'You sold {0} geng points for {1} credits!'.format(number, Math.floor(number*100*Math.pow(1.05, number-1)));
                         message.channel.sendMessage(msg);
                     } else {
                         message.channel.sendMessage('You don\'t have any geng points.');
@@ -264,7 +264,7 @@ bot.on('message', message => {
                 } else {
                     if (cd) {
                         var msg = !enough ? 'You don\'t have enough nong points to purchase that many.':
-                            'You sold {0} nong points for {1} credits!'.format(number, Math.floor(number*30*Math.pow(1.1,number-1)));
+                            'You sold {0} nong points for {1} credits!'.format(number, Math.floor(number*30*Math.pow(1.05,number-1)));
                         message.channel.sendMessage(msg);
                     } else {
                         message.channel.sendMessage('You don\'t have any nong points.');
