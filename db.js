@@ -106,6 +106,35 @@ module.exports = {
         });
     },
 
+    update_credits : function(user, amount, callback) {
+        MongoClient.connect(url, function(e, db) {
+            var collection = db.collection('credits');
+            collection.findOne({ user : user }, function(e, doc) {
+                if (doc) {
+                    collection.update(
+                        { user: user },
+                        { $inc: { credit: amount },
+                          $set: { time: Date.now() } },
+                        { upsert: true },
+                        function(e, result) {
+                            db.close;
+                            callback(e);
+                    });
+                } else {
+                    collection.update(
+                        { user: user },
+                        { $inc: { credit: amount } },
+                        { upsert: true },
+                        function(e, result) {
+                            db.close();
+                            callback(e);
+                    });
+                }
+            });
+        });
+    },
+
+
     bet_credit : function(user, number, callback) {
         MongoClient.connect(url, function(e, db) {
             var collection = db.collection('credits');
@@ -180,7 +209,7 @@ module.exports = {
                                 var value = type === 'geng' ? 100 : 30;
                                  credits_collection.update(
                                     { user: user },
-                                    { $inc: { credit: Math.floor(number*100*Math.log(1.718+number)) } },
+                                    { $inc: { credit: Math.floor(number*100*Math.pow(1.05, number-1)) } },
                                     { upsert: true },
                                      function(e, result) {
                                         db.close();
