@@ -342,7 +342,7 @@ bot.on('message', message => {
                                 bot.removeListener('message', f);
                                 return message;
                             } else if (blackjack_points === 21) {
-                                win = 500;
+                                win = 1000;
                                 message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `{3}` credits.'.format(random_num, random_suit, blackjack_points, win));
                                 db.update_credits(message.author.id, win, function(e) {
                                     if (e) {
@@ -366,11 +366,11 @@ bot.on('message', message => {
                                 win = 1000;
                                 message.channel.sendMessage('You got `{0}` exactly!!! You received `{1}` credits.'.format(blackjack_points, win));
                             } else if (blackjack_points > 21){
-                                win = -50;
+                                win = -100;
                                 message.channel.sendMessage('You got `{0}`... better luck next time. You lost `{1}` credits.'.format(blackjack_points, -win));
                             } else {
-                                win = blackjack_points;
-                                message.channel.sendMessage('You got `{0}`. Try hitting 21 for jackpot. You received `{1}` credits.'.format(blackjack_points, win));
+                                win = -blackjack_points;
+                                message.channel.sendMessage('You got `{0}`. Try hitting 21 for jackpot. You lost `{1}` credits.'.format(blackjack_points, -win));
                             }
                             db.update_credits(message.author.id, win, function(e) {
                                 if (e) {
