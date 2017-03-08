@@ -44,7 +44,8 @@ bot.on('message', message => {
             '!dailies -> Worth 300 credits.\n' +
             '!cd <user> -> Get credit count of user.\n' +
             '!cdl -> Credit Leaderboards \n' +
-            '!bet <number> -> Bet that much amount.\n```'
+            '!bet <number> -> Bet that much amount.\n' +
+            '!bj -> Start a game of blackjack! Type !bj help for instructions.\n```'
         );
     }
 
@@ -281,6 +282,18 @@ bot.on('message', message => {
         }
     }
 
+    if (message.content === '{0}bj help'.format(command_prefix)) {
+        message.channel.sendMessage('```\nBlackjack\n-------------------------------------------------\n' +
+            'Goal of this game is to get close to 21 points as possible. In each round,' + 
+            'you can either hit/stand. If you hit, you get another card. If you stand, it means you are done. ' +
+            'A is worth either 1 or 11 points (depending on if you go over 21 or not) All the face cards are worth 10 points\n' +
+            'If total points is < 21, credit = total point\n' +
+            'If total points is = 21, credit = 1000\n' +
+            'If total points is > 21, credit = -100```'
+        );
+    }
+
+
     if (message.content === '{0}bj'.format(command_prefix)) {
         var broke = false;
         db.get_user_credit(message.author.id, function(e, doc) {
@@ -288,7 +301,7 @@ bot.on('message', message => {
                 console.log(e);
                 message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
             } else {
-                if (doc.credit < 50) {
+                if (doc.credit < 100) {
                     message.channel.sendMessage('Not enough credit to play blackjack :('); 
                 } else {
                     message.channel.sendMessage('Started blackjack! Type hit to start the game.');
