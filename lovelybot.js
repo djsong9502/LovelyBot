@@ -342,8 +342,8 @@ bot.on('message', message => {
                                 bot.removeListener('message', f);
                                 return message;
                             } else if (blackjack_points === 21) {
-                                win = 1000;
-                                message.channel.sendMessage('You got `{0}` exactly!!! You received `{1}` credits.'.format(blackjack_points, win))
+                                win = 500;
+                                message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `{3}` credits.'.format(random_num, random_suit, blackjack_points, win));
                                 db.update_credits(message.author.id, win, function(e) {
                                     if (e) {
                                         console.log(e);
