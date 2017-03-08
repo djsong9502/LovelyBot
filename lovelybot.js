@@ -281,7 +281,7 @@ bot.on('message', message => {
         }
     }
 
-    if (message.content === '{0}bjtestnoone'.format(command_prefix)) {
+    if (message.content === '{0}bj'.format(command_prefix)) {
         var broke = false;
         db.get_user_credit(message.author.id, function(e, doc) {
             if (e) {
@@ -315,8 +315,22 @@ bot.on('message', message => {
                             blackjack_points += index_num+1;
 
                             if (blackjack_points > 21) {
-                                                    win = -100;
+                                win = -100;
                                 message.channel.sendMessage('{0}{1}  You got `{2}`... better luck next time. You lost `{3}` credits.'.format(random_num, random_suit, blackjack_points, -win));
+                                db.update_credits(message.author.id, win, function(e) {
+                                    if (e) {
+                                        console.log(e);
+                                        message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
+                                    }
+                                });
+                                blackjack_points = 0;
+                                blackjack_progress = false;
+                                blackjack_player_id = 0;
+                                bot.removeListener('message', f);
+                                return message;
+                            } else if (blackjack_points === 21) {
+                                win = 1000;
+                                message.channel.sendMessage('You got `{0}` exactly!!! You received `{1}` credits.'.format(blackjack_points, win))
                                 db.update_credits(message.author.id, win, function(e) {
                                     if (e) {
                                         console.log(e);
