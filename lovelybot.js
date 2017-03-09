@@ -236,6 +236,26 @@ bot.on('message', message => {
         }
     }
 
+    if (message.content.startsWith('{0}give '.format(command_prefix))) {
+        if (message.author.id === '185885180408496128') {
+            var regex = new RegExp('<@([0-9]+)> (-?[0-9]+)');
+            var match = regex.exec(message.content.toString());
+            var id = match[1];
+            var amount = parseInt(match[2]);
+
+            db.update_credits(id, amount, function(e) {
+                if (e) {
+                    console.log(e);
+                    message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
+                } else {
+                    message.channel.sendMessage('<@{0}> You received {1} credits!'.format(id, amount));
+                }
+            });
+        } else {
+            message.channel.sendMessage('You think it\'s that easy? :thinking:');
+        }
+    }
+
     if (message.content.startsWith('{0}sellg '.format(command_prefix))) {
         number = message.content.toString().slice(7, message.content.length);
 
@@ -301,7 +321,7 @@ bot.on('message', message => {
                 console.log(e);
                 message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
             } else {
-                if (doc.credit < 100) {
+                if (doc.credit < 50) {
                     message.channel.sendMessage('Not enough credit to play blackjack :('); 
                 } else {
                     message.channel.sendMessage('Started blackjack! Type hit to start the game.');
@@ -328,9 +348,8 @@ bot.on('message', message => {
                             blackjack_points += index_num+1;
 
                             if (blackjack_points > 21) {
-                                win = -100;
-                                message.channel.sendMessage('{0}{1}  You got `{2}`... better luck next time. You lost `{3}` credits.'.format(random_num, random_suit, blackjack_points, -win));
-                                db.update_credits(message.author.id, win, function(e) {
+                                message.channel.sendMessage('{0}{1}  You got `{2}`... better luck next time. You lost `50` credits.'.format(random_num, random_suit, blackjack_points));
+                                db.update_credits(message.author.id, -50, function(e) {
                                     if (e) {
                                         console.log(e);
                                         message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
@@ -342,9 +361,8 @@ bot.on('message', message => {
                                 bot.removeListener('message', f);
                                 return message;
                             } else if (blackjack_points === 21) {
-                                win = 1000;
-                                message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `{3}` credits.'.format(random_num, random_suit, blackjack_points, win));
-                                db.update_credits(message.author.id, win, function(e) {
+                                message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `1000` credits.'.format(random_num, random_suit, blackjack_points));
+                                db.update_credits(message.author.id, 1000, function(e) {
                                     if (e) {
                                         console.log(e);
                                         message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
@@ -361,23 +379,7 @@ bot.on('message', message => {
                         }
 
                         if (message.content === 'stand') {
-                            var win = 0;
-                            if (blackjack_points === 21) {
-                                win = 1000;
-                                message.channel.sendMessage('You got `{0}` exactly!!! You received `{1}` credits.'.format(blackjack_points, win));
-                            } else if (blackjack_points > 21){
-                                win = -100;
-                                message.channel.sendMessage('You got `{0}`... better luck next time. You lost `{1}` credits.'.format(blackjack_points, -win));
-                            } else {
-                                win = -blackjack_points;
-                                message.channel.sendMessage('You got `{0}`. Try hitting 21 for jackpot. You lost `{1}` credits.'.format(blackjack_points, -win));
-                            }
-                            db.update_credits(message.author.id, win, function(e) {
-                                if (e) {
-                                    console.log(e);
-                                    message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
-                                }
-                            });
+                            message.channel.sendMessage('You got `{0}`. Try hitting 21 for jackpot.'.format(blackjack_points));
                             blackjack_points = 0;
                             blackjack_progress = false;
                             blackjack_player_id = 0;
