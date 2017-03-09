@@ -113,8 +113,7 @@ module.exports = {
                 if (doc) {
                     collection.update(
                         { user: user },
-                        { $inc: { credit: amount },
-                          $set: { time: Date.now() } },
+                        { $inc: { credit: amount } },
                         { upsert: true },
                         function(e, result) {
                             db.close;
@@ -144,8 +143,7 @@ module.exports = {
                         var win = Math.round(Math.random()) ? number : -number;
                         collection.update(
                           { user: user },
-                          { $inc: { credit: win },
-                          },
+                          { $inc: { credit: win } },
                           { upsert: true },
                           function(e, result) {
                             db.close();
