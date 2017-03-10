@@ -348,8 +348,8 @@ bot.on('message', message => {
                             index_num =  index_num > 9 ? 9 : index_num;
 
                             var random_suit = suit_list[Math.floor(Math.random()*4)];
-                            if (index_num == 1) {
-                                index_num == blackjack_points + 11 > 21 ? 0 : 10;
+                            if (index_num == 0) {
+                                index_num = blackjack_points + 11 > 21 ? 0 : 10;
                             }
                             
                             blackjack_points += index_num+1;
