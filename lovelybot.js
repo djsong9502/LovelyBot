@@ -45,7 +45,7 @@ bot.on('message', message => {
             '!cd <user> -> Get credit count of user.\n' +
             '!cdl -> Credit Leaderboards \n' +
             '!bet <number> -> Bet that much amount.\n' +
-            '!bj <bet_amount> -> Start a game of blackjack! Type !bj help for instructions.\n```'
+            '!bj -> Start a game of blackjack! Type !bj help for instructions.\n```'
         );
     }
 
@@ -156,7 +156,7 @@ bot.on('message', message => {
     }
 
     if (message.content === '{0}dailies'.format(command_prefix)) {
-        db.dailies(message.author.id, function(e, added, time) {
+        db.dailies(message.author.id, message.author.username, function(e, added, time) {
             if (e) {
                 console.log(e);
                 message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
@@ -217,7 +217,7 @@ bot.on('message', message => {
         number = message.content.toString().slice(5, message.content.length);
 
         if (!isNaN(number) && !number.includes('.') && parseInt(number) > 0) {
-            db.bet_credit(message.author.id, parseInt(number), function(e, valid, win) {
+            db.bet_credit(message.author.id, message.author.username, parseInt(number), function(e, valid, win) {
                 if (e) {
                     console.log(e);
                     message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');

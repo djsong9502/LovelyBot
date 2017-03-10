@@ -81,7 +81,7 @@ module.exports = {
         });
     },
 
-    dailies : function(user, callback) {
+    dailies : function(user, name, callback) {
         MongoClient.connect(url, function(e, db) {
             var collection = db.collection('credits');
             collection.findOne({ user : user }, function(e, doc) {
@@ -95,7 +95,9 @@ module.exports = {
                     collection.update(
                         { user: user },
                         { $inc: { credit: 300 },
-                          $set: { time: Date.now() } },
+                          $set: { time: Date.now(),
+                            name: name }
+                        },
                         { upsert: true },
                         function(e, result) {
                             db.close();
@@ -134,7 +136,7 @@ module.exports = {
     },
 
 
-    bet_credit : function(user, number, callback) {
+    bet_credit : function(user, name, number, callback) {
         MongoClient.connect(url, function(e, db) {
             var collection = db.collection('credits');
             collection.findOne( { user: user }, function(e, doc) {
@@ -143,7 +145,8 @@ module.exports = {
                         var win = Math.round(Math.random()) ? number : -number;
                         collection.update(
                           { user: user },
-                          { $inc: { credit: win } },
+                          { $inc: { credit: win },
+                              $set: { name: name } },
                           { upsert: true },
                           function(e, result) {
                             db.close();
