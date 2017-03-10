@@ -314,14 +314,21 @@ bot.on('message', message => {
     }
 
 
-    if (message.content === '{0}bj'.format(command_prefix)) {
-        var broke = false;
+    if (message.content.startsWith('{0}bj '.format(command_prefix))) {
+        var regex = new RegExp('^{0}bj ([0-9]+)$'.format(command_prefix));
+        var match = regex.exec(message.content.toString());
+        if (!match) {
+            message.channel.sendMessage('Please bet a number to play blackjacks.');
+            return
+        }
+        var amount = parseInt(match[1]);
+
         db.get_user_credit(message.author.id, function(e, doc) {
             if (e) {
                 console.log(e);
                 message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
             } else {
-                if (doc.credit < 50) {
+                if (doc.credit < amount) {
                     message.channel.sendMessage('Not enough credit to play blackjack :('); 
                 } else {
                     message.channel.sendMessage('Started blackjack! Type hit to start the game.');
@@ -348,8 +355,8 @@ bot.on('message', message => {
                             blackjack_points += index_num+1;
 
                             if (blackjack_points > 21) {
-                                message.channel.sendMessage('{0}{1}  You got `{2}`... better luck next time. You lost `50` credits.'.format(random_num, random_suit, blackjack_points));
-                                db.update_credits(message.author.id, -50, function(e) {
+                                message.channel.sendMessage('{0}{1}  You got `{2}`... better luck next time. You lost `{3}` credits.'.format(random_num, random_suit, blackjack_points, amount));
+                                db.update_credits(message.author.id, -amount, function(e) {
                                     if (e) {
                                         console.log(e);
                                         message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
@@ -361,8 +368,8 @@ bot.on('message', message => {
                                 bot.removeListener('message', f);
                                 return message;
                             } else if (blackjack_points === 21) {
-                                message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `1000` credits.'.format(random_num, random_suit, blackjack_points));
-                                db.update_credits(message.author.id, 1000, function(e) {
+                                message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `{3}` credits.'.format(random_num, random_suit, blackjack_points, amount*10));
+                                db.update_credits(message.author.id, amount*10, function(e) {
                                     if (e) {
                                         console.log(e);
                                         message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
