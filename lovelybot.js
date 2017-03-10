@@ -347,7 +347,7 @@ bot.on('message', message => {
                             blackjack_points += index_num+1;
 
                             if (blackjack_points > 21) {
-                                message.channel.sendMessage('{0}{1}  You got `{2}`... better luck next time. You lost `{3}` credits.'.format(random_num, random_suit, blackjack_points, -100));
+                                message.channel.sendMessage('{0}{1}  You got `{2}`... better luck next time. You lost `{3}` credits.'.format(random_num, random_suit, blackjack_points, 100));
                                 db.update_credits(message.author.id, -100, function(e) {
                                     if (e) {
                                         console.log(e);
