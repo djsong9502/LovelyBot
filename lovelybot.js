@@ -45,7 +45,7 @@ bot.on('message', message => {
             '!cd <user> -> Get credit count of user.\n' +
             '!cdl -> Credit Leaderboards \n' +
             '!bet <number> -> Bet that much amount.\n' +
-            '!bj -> Start a game of blackjack! Type !bj help for instructions.\n```'
+            '!bj <bet_amount> -> Start a game of blackjack! Type !bj help for instructions.\n```'
         );
     }
 
@@ -307,9 +307,9 @@ bot.on('message', message => {
             'Goal of this game is to get close to 21 points as possible. In each round,' + 
             'you can either hit/stand. If you hit, you get another card. If you stand, it means you are done. ' +
             'A is worth either 1 or 11 points (depending on if you go over 21 or not) All the face cards are worth 10 points\n' +
-            'If total points is < 21, credit = total point\n' +
-            'If total points is = 21, credit = 500\n' +
-            'If total points is > 21, credit = -100```'
+            'If total points is < 21, credit = 0\n' +
+            'If total points is = 21, credit = bet_number*10\n' +
+            'If total points is > 21, credit = -bet_number```'
         );
     }
 
