@@ -1,11 +1,10 @@
 const Discord = require('discord.js');
 const db = require('./db.js');
+const bj = require('./bj.js')
 const bot = new Discord.Client();
 const token = process.env.bot_token;
 const command_prefix = process.env.bot_command;
-var blackjack_progress = false;
-var blackjack_player_id = 0;
-var blackjack_points = 0;
+var bj_active = false;
 
 String.prototype.format = function () {
     var args = [].slice.call(arguments);
@@ -24,7 +23,7 @@ bot.on('message', message => {
         return message;
     }
 
-    if (blackjack_progress && message.content.charAt(0) === command_prefix) {
+    if (bj_active && message.content.charAt(0) === command_prefix) {
         message.channel.sendMessage('Blackjack game in progress. Please wait until game finishes.');
         return message;
     }
@@ -37,10 +36,8 @@ bot.on('message', message => {
             '!addq -> Add a quote to the VSRG discord group library!\n' +
             '!geng -> DOO*6 JACKPOT with 5% chance. Worth 100 credits.\n' +
             '!nong -> noooooong JACKPOT with 10% chance. Worth 30 credits.\n' +
-            '!geng <user> -> Show geng points for user.\n' +
-            '!nong <user> -> Show nong points for user.\n' +
-            '!sellg <number> -> Sell geng points for credits. Bulk sell = more bonus.\n' +
-            '!selln <number> -> Sell nong points for credits. Bulk sell = more bonus.\n' +
+            '!geng <user> -> Show geng points for user. Replace geng with nong for nong points.\n' +
+            '!sellg <number> -> Buy credits. Replace g with n to sell nongs. Bulk sell = more bonus.\n' +
             '!dailies -> Worth 300 credits.\n' +
             '!cd <user> -> Get credit count of user.\n' +
             '!cdl -> Credit Leaderboards \n' +
@@ -327,128 +324,11 @@ bot.on('message', message => {
                 if (doc.credit < amount) {
                     message.channel.sendMessage('Not enough credit to play blackjack :('); 
                 } else {
-                    message.channel.sendMessage('Started blackjack! Type hit to start the game.');
-                    blackjack_progress = true;
-                    blackjack_player_id = parseInt(message.author.id);
-                    var num_of_aces = 0;
-                    var dealer_score;
-                    
-                    weight = Math.random();
-                    if (weight >= 0.737) {
-                        dealer_score = 22;
-                    } else if (weight >= 0.711 && weight < 0.737) {
-                        dealer_score = 21;
-                    } else if (weight >= 0.658 && weight < 0.711) {
-                        dealer_score = 20;
-                    } else if (weight >= 0.579 && weight < 0.658) {
-                        dealer_score = 19;
-                    } else if (weight >= 0.474 && weight < 0.579) {
-                        dealer_score = 18;
-                    } else if (weight >= 0.342 && weight < 0.474) {
-                        dealer_score = 17;
-                    } else if (weight >= 0.184 && weight < 0.342) {
-                        dealer_score = 16;
-                    } else if (weight >= 0 && weight < 0.184) {
-                        dealer_score = 15;
-                    }
-
-                    bot.on('message', function f (message) {
-                        if (parseInt(message.author.id) != blackjack_player_id) {
-                            return message;
-                        }
-
-                        if (message.content === 'hit') {
-                            var num_list = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-                            var suit_list = [':spades:', ':diamonds:', ':clubs:', ':hearts:']
-                            var index_num = Math.floor(Math.random()*13)
-                            var random_num =  num_list[index_num];
-
-                            index_num =  index_num > 9 ? 9 : index_num;
-                            var random_suit = suit_list[Math.floor(Math.random()*4)];
-                            if (index_num == 0) {
-                                num_of_aces += 1;
-                                blackjack_points += 10;
-                            }
-
-                            blackjack_points += index_num+1;
-
-                            while (blackjack_points > 21 && num_of_aces !== 0) {
-                                num_of_aces -= 1;
-                                blackjack_points -= 10;
-                            }
-
-                            if (blackjack_points > 21) {
-                                if (dealer_score == 22) {
-                                    message.channel.sendMessage('{0}{1}  You got `{2}` but dealer also busted. No credits lost.'.format(random_num, random_suit, blackjack_points));
-                                } else {
-                                    message.channel.sendMessage('{0}{1}  You got `{2}` but dealer got `{3}`. You lost {4} credits.'.format(random_num, random_suit, blackjack_points, dealer_score, amount));
-
-                                    db.update_credits(message.author.id, -amount, function(e) {
-                                        if (e) {
-                                            console.log(e);
-                                            message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
-                                        }
-                                    });
-                                }
-                                blackjack_points = 0;
-                                blackjack_progress = false;
-                                blackjack_player_id = 0;
-                                bot.removeListener('message', f);
-                                return message;
-                            } else if (blackjack_points === 21) {
-                                message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `{3}` credits.'.format(random_num, random_suit, blackjack_points, amount*4));
-                                db.update_credits(message.author.id, amount*4, function(e) {
-                                    if (e) {
-                                        console.log(e);
-                                        message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
-                                    }
-                                });
-                                blackjack_points = 0;
-                                blackjack_progress = false;
-                                blackjack_player_id = 0;
-                                bot.removeListener('message', f);
-                                return message;
-                            }
-
-                            message.channel.sendMessage('{0}{1} Do you want to hit/stand?'.format(random_num, random_suit));
-                        }
-
-                        if (message.content === 'stand') {
-                            var win = 0;
-                            if (dealer_score == 22) {
-                                message.channel.sendMessage('You got `{0}` but dealer busted. You win {1} credits!'.format(blackjack_points, Math.floor(amount/3)));
-                                win = Math.floor(amount/3);
-                            } else if (dealer_score > blackjack_points) {
-                                message.channel.sendMessage('You got `{0}` but dealer got `{1}`. You lost {2} credits.'.format(blackjack_points, dealer_score, amount));
-                                win = -amount;
-                            } else if (dealer_score === blackjack_points) {
-                                message.channel.sendMessage('You got `{0}` but dealer also got `{1}`. No credits lost.'.format(blackjack_points, dealer_score));
-                                blackjack_points = 0;
-                                blackjack_progress = false;
-                                blackjack_player_id = 0;
-                                bot.removeListener('message', f);
-                                return message;
-                            } else {
-                                message.channel.sendMessage('You got `{0}` and dealer got `{1}`. You win {2} credits.'.format(blackjack_points, dealer_score, Math.floor(amount/3)));
-                                win = Math.floor(amount/3);
-                            }
-
-                            db.update_credits(message.author.id, win, function(e) {
-                                if (e) {
-                                    console.log(e);
-                                    message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
-                                } else {
-                                    blackjack_points = 0;
-                                    blackjack_progress = false;
-                                    blackjack_player_id = 0;
-                                    bot.removeListener('message', f);
-
-                                }
-                            });
-                            
-                        }
+                    bj_active = true;
+                    bj.play_blackjack(bot, message, amount, function() {
+                        bj_active = false;
+                        return message;
                     });
-        
                 }
             }
         });
