@@ -1,1 +1,1 @@
-worker: node lovelybot.js
+worker: node main.js
