@@ -399,8 +399,8 @@ bot.on('message', message => {
                                 bot.removeListener('message', f);
                                 return message;
                             } else if (blackjack_points === 21) {
-                                message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `{3}` credits.'.format(random_num, random_suit, blackjack_points, 1000));
-                                db.update_credits(message.author.id, amount*5, function(e) {
+                                message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `{3}` credits.'.format(random_num, random_suit, blackjack_points, amount*4));
+                                db.update_credits(message.author.id, amount*4, function(e) {
                                     if (e) {
                                         console.log(e);
                                         message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
@@ -419,11 +419,11 @@ bot.on('message', message => {
                         if (message.content === 'stand') {
                             var win = 0;
                             if (dealer_score == 22) {
-                                message.channel.sendMessage('You got `{0}` but dealer busted. You win {1} credits!'.format(blackjack_points, amount/2));
-                                win = amount/2;
+                                message.channel.sendMessage('You got `{0}` but dealer busted. You win {1} credits!'.format(blackjack_points, Math.floor(amount/3)));
+                                win = Math.floor(amount/3);
                             } else if (dealer_score > blackjack_points) {
                                 message.channel.sendMessage('You got `{0}` but dealer got `{1}`. You lost {2} credits.'.format(blackjack_points, dealer_score, amount));
-                                win = -amount/2;
+                                win = amount;
                             } else if (dealer_score === blackjack_points) {
                                 message.channel.sendMessage('You got `{0}` but dealer also got `{1}`. No credits lost.'.format(blackjack_points, dealer_score));
                                 blackjack_points = 0;
@@ -432,8 +432,8 @@ bot.on('message', message => {
                                 bot.removeListener('message', f);
                                 return message;
                             } else {
-                                message.channel.sendMessage('You got `{0}` and dealer got `{1}`. You win {2} credits.'.format(blackjack_points, dealer_score, amount/2));
-                                win = amount/2;
+                                message.channel.sendMessage('You got `{0}` and dealer got `{1}`. You win {2} credits.'.format(blackjack_points, dealer_score, Math.floor(amount/3)));
+                                win = Math.floor(amount/3);
                             }
 
                             db.update_credits(message.author.id, win, function(e) {
