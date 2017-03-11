@@ -314,18 +314,47 @@ bot.on('message', message => {
     }
 
 
-    if (message.content === '{0}bj'.format(command_prefix)) {
+    if (message.content.startsWith('{0}bj '.format(command_prefix))) {
+        var regex = new RegExp('^{0}bj ([0-9]+)$'.format(command_prefix));
+        var match = regex.exec(message.content.toString());
+        if (!match) {
+            message.channel.sendMessage('Please bet a number to play blackjacks.');
+            return
+        }
+        var amount = parseInt(match[1]);        
         db.get_user_credit(message.author.id, function(e, doc) {
             if (e) {
                 console.log(e);
                 message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
             } else {
-                if (doc.credit < 50) {
+                if (doc.credit < amount) {
                     message.channel.sendMessage('Not enough credit to play blackjack :('); 
                 } else {
                     message.channel.sendMessage('Started blackjack! Type hit to start the game.');
                     blackjack_progress = true;
                     blackjack_player_id = parseInt(message.author.id);
+                    var num_of_aces = 0;
+                    var dealer_score;
+                    
+                    weight = Math.random();
+                    if (weight >= 0.737) {
+                        dealer_score = 22;
+                    } else if (weight >= 0.711 && weight < 0.737) {
+                        dealer_score = 21;
+                    } else if (weight >= 0.658 && weight < 0.711) {
+                        dealer_score = 20;
+                    } else if (weight >= 0.579 && weight < 0.658) {
+                        dealer_score = 19;
+                    } else if (weight >= 0.474 && weight < 0.579) {
+                        dealer_score = 18;
+                    } else if (weight >= 0.342 && weight < 0.474) {
+                        dealer_score = 17;
+                    } else if (weight >= 0.184 && weight < 0.342) {
+                        dealer_score = 16;
+                    } else if (weight >= 0 && weight < 0.184) {
+                        dealer_score = 15;
+                    }
+
                     bot.on('message', function f (message) {
                         if (parseInt(message.author.id) != blackjack_player_id) {
                             return message;
@@ -338,22 +367,32 @@ bot.on('message', message => {
                             var random_num =  num_list[index_num];
 
                             index_num =  index_num > 9 ? 9 : index_num;
-
                             var random_suit = suit_list[Math.floor(Math.random()*4)];
                             if (index_num == 0) {
-                                index_num = blackjack_points + 11 > 21 ? 0 : 10;
+                                num_of_aces += 1;
+                                blackjack_points += 10;
                             }
-                            
+
                             blackjack_points += index_num+1;
 
+                            while (blackjack_points > 21 && num_of_aces !== 0) {
+                                num_of_aces -= 1;
+                                blackjack_points -= 10;
+                            }
+
                             if (blackjack_points > 21) {
-                                message.channel.sendMessage('{0}{1}  You got `{2}`... better luck next time. You lost `{3}` credits.'.format(random_num, random_suit, blackjack_points, 100));
-                                db.update_credits(message.author.id, -100, function(e) {
-                                    if (e) {
-                                        console.log(e);
-                                        message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
-                                    }
-                                });
+                                if (dealer_score == 22) {
+                                    message.channel.sendMessage('{0}{1}  You got `{2}` but dealer also busted. No credits lost.'.format(random_num, random_suit, blackjack_points));
+                                } else {
+                                    message.channel.sendMessage('{0}{1}  You got `{2}` but dealer got `{3}`. You lost {4} credits.'.format(random_num, random_suit, blackjack_points, dealer_score, amount));
+
+                                    db.update_credits(message.author.id, -amount, function(e) {
+                                        if (e) {
+                                            console.log(e);
+                                            message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
+                                        }
+                                    });
+                                }
                                 blackjack_points = 0;
                                 blackjack_progress = false;
                                 blackjack_player_id = 0;
@@ -361,7 +400,7 @@ bot.on('message', message => {
                                 return message;
                             } else if (blackjack_points === 21) {
                                 message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `{3}` credits.'.format(random_num, random_suit, blackjack_points, 1000));
-                                db.update_credits(message.author.id, 100*10, function(e) {
+                                db.update_credits(message.author.id, amount*5, function(e) {
                                     if (e) {
                                         console.log(e);
                                         message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
@@ -378,18 +417,46 @@ bot.on('message', message => {
                         }
 
                         if (message.content === 'stand') {
-                            message.channel.sendMessage('You got `{0}`. Try hitting 21 for jackpot.'.format(blackjack_points));
-                            blackjack_points = 0;
-                            blackjack_progress = false;
-                            blackjack_player_id = 0;
-                            bot.removeListener('message', f);
+                            var win = 0;
+                            if (dealer_score == 22) {
+                                message.channel.sendMessage('You got `{0}` but dealer busted. You win {1} credits!'.format(blackjack_points, amount/2));
+                                win = amount/2;
+                            } else if (dealer_score > blackjack_points) {
+                                message.channel.sendMessage('You got `{0}` but dealer got `{1}`. You lost {2} credits.'.format(blackjack_points, dealer_score, amount));
+                                win = -amount/2;
+                            } else if (dealer_score === blackjack_points) {
+                                message.channel.sendMessage('You got `{0}` but dealer also got `{1}`. No credits lost.'.format(blackjack_points, dealer_score));
+                                blackjack_points = 0;
+                                blackjack_progress = false;
+                                blackjack_player_id = 0;
+                                bot.removeListener('message', f);
+                                return message;
+                            } else {
+                                message.channel.sendMessage('You got `{0}` and dealer got `{1}`. You win {2} credits.'.format(blackjack_points, dealer_score, amount/2));
+                                win = amount/2;
+                            }
+
+                            db.update_credits(message.author.id, win, function(e) {
+                                if (e) {
+                                    console.log(e);
+                                    message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
+                                } else {
+                                    blackjack_points = 0;
+                                    blackjack_progress = false;
+                                    blackjack_player_id = 0;
+                                    bot.removeListener('message', f);
+
+                                }
+                            });
+                            
                         }
                     });
-    
+        
                 }
             }
         });
     }
+
 });
 
 bot.login(token);
