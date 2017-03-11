@@ -304,12 +304,9 @@ bot.on('message', message => {
 
     if (message.content === '{0}bj help'.format(command_prefix)) {
         message.channel.sendMessage('```\nBlackjack\n-------------------------------------------------\n' +
-            'Goal of this game is to get close to 21 points as possible. In each round,' + 
+            'Goal of this game is to get closer to 21 points than the dealer without going over. In each round,' + 
             'you can either hit/stand. If you hit, you get another card. If you stand, it means you are done. ' +
-            'A is worth either 1 or 11 points (depending on if you go over 21 or not) All the face cards are worth 10 points\n' +
-            'If total points is < 21, credit = 0\n' +
-            'If total points is = 21, credit = bet_number*10\n' +
-            'If total points is > 21, credit = -bet_number```'
+            'A is worth either 1 or 11 points (depending on if you go over 21 or not) All the face cards are worth 10 points\n'
         );
     }
 
@@ -423,7 +420,7 @@ bot.on('message', message => {
                                 win = Math.floor(amount/3);
                             } else if (dealer_score > blackjack_points) {
                                 message.channel.sendMessage('You got `{0}` but dealer got `{1}`. You lost {2} credits.'.format(blackjack_points, dealer_score, amount));
-                                win = amount;
+                                win = -amount;
                             } else if (dealer_score === blackjack_points) {
                                 message.channel.sendMessage('You got `{0}` but dealer also got `{1}`. No credits lost.'.format(blackjack_points, dealer_score));
                                 blackjack_points = 0;
