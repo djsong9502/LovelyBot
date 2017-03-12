@@ -1,10 +1,12 @@
 const Discord = require('discord.js');
 const db = require('./db.js');
-const bj = require('./bj.js')
+const bj = require('./bj.js');
+const gom = require('./gomoku.js');
 const bot = new Discord.Client();
 const token = process.env.bot_token;
 const command_prefix = process.env.bot_command;
 var bj_active = false;
+var gom_active = false;
 
 String.prototype.format = function () {
     var args = [].slice.call(arguments);
@@ -27,6 +29,12 @@ bot.on('message', message => {
         message.channel.sendMessage('Blackjack game in progress. Please wait until game finishes.');
         return message;
     }
+
+    if (gom_active && message.content.charAt(0) === command_prefix) {
+        message.channel.sendMessage('Gomoku game in progress. Please wait until game finishes.');
+        return message;
+    }
+
 
     if (message.content === '{0}help'.format(command_prefix)) {
         message.channel.sendMessage('```★List of commands★\n-------------------------' + 
@@ -334,6 +342,27 @@ bot.on('message', message => {
         });
     }
 
+    if (message.content.startsWith('{0}gom '.format(command_prefix))) {
+        var regex = new RegExp('^{0}gom <@([0-9]+)>$'.format(command_prefix));
+        var match = regex.exec(message.content.toString());
+        if (!match) {
+            message.channel.sendMessage('Please specify your opponent.');
+            return;
+        }
+
+        if (message.author.id === match[1]) {
+            message.channel.sendMessage('You can\'t play with yourself :(');
+            return;
+        }
+
+        gom_active = true;
+
+        gom.play_gomoku(bot, message, message.author.id, match[1], function() {
+            gom_active = false;
+            message.channel.sendMessage('Gomoku game ended.');
+            return message;
+        });
+    }
 });
 
 bot.login(token);
