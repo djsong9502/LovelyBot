@@ -49,6 +49,7 @@ var f = function(message) {
     if (message.content === 'quit') {
         message.channel.sendMessage('<@{0}> forfeited the game :('.format(message.author.id));
         bot.removeListener('message', f);
+        remove_timeout();
         callback();
     }
 
