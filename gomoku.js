@@ -43,7 +43,7 @@ var f = function(message) {
     }
 
     if (message.content === 'board') {
-        message.channel.sendMessage(board_in_string);
+        message.channel.sendMessage(board_in_string());
     }
     
     if (message.content === 'quit') {
