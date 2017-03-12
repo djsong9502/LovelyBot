@@ -359,7 +359,7 @@ bot.on('message', message => {
 
         gom.play_gomoku(bot, message, message.author.id, match[1], function() {
             gom_active = false;
-            message.channel.sendMessage('Gomoku game ended.');
+            message.channel.sendMessage('Gomoku game has ended.');
             return message;
         });
     }
