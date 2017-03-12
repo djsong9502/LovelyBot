@@ -1,12 +1,11 @@
 const Discord = require('discord.js');
 const db = require('./db.js');
 
-// Player 1 = o
-// Player 2 = x
 var player1;
 var player2;
 var bot;
 var board = [];
+
 var turn;
 var timeout_id;
 var callback;
@@ -15,7 +14,7 @@ var ch_list =
 
 var board_in_string = function() {
     var board_string = '```';
-    for (i = 0; i < 15; i++) {
+    for (i = 14; i >= 0; i--) {
         board_string += '{0} '.format(ch_list[i]);
         for (j = 0; j < 15; j++) {
             board_string += '{0} '.format(board[i][j]);
@@ -89,7 +88,7 @@ var f = function(message) {
             message.channel.sendMessage('Can\'t place in that position. Try again.');
         } else {
             board[r][c] = 'o';
-            if (check_board()) {
+            if (check_board('o')) {
                 message.channel.sendMessage(board_in_string());
                 message.channel.sendMessage('<@{0}>\ won the game. Congratlations!'.format(player1));
                 bot.removeListener('message', f);
@@ -108,7 +107,7 @@ var f = function(message) {
             message.channel.sendMessage('Can\'t place in that position. Try again.');
         } else {
             board[r][c] = 'x';
-            if (check_board()) {
+            if (check_board('x')) {
                 message.channel.sendMessage(board_in_string());
                 message.channel.sendMessage('<@{0}>\ won the game. Congratlations!'.format(player2));
                 bot.removeListener('message', f);
@@ -127,9 +126,47 @@ var f = function(message) {
     }
 }
 
-var check_board = function () {
+var adj_exist = function(i, j, dir, ch, count) {
+    if ((i < 0 || j < 0 || i > 14 || j > 14) || board[i][j] !== ch ) {
+        return 0;
+    } else {
+       if (dir === 0) {
+           count.num += 1;
+           adj_exist(i+1, j, 0, ch, count);
+       } else if (dir === 1) {
+           count.num += 1;
+           adj_exist(i, j+1, 1, ch, count)
+       } else if (dir === 2) {
+           count.num += 1;
+           adj_exist(i+1, j-1, 2, ch, count); 
+       } else {
+           count.num += 1;
+           adj_exist(i+1, j+1, 3, ch, count);
+       }
+    }
+}
+
+var check_board = function (ch) {
     for (i = 0; i < 15; i++) {
         for (j = 0; j < 15; j++) {
+            if (board[i][j] == ch) {
+
+                // Can't pass by referene in js. Unfortunately pretty bad solution.
+                // TODO Think of better way.
+                var up = { 'num' : 0};
+                var right = { 'num' : 0};
+                var rightu = { 'num' : 0};
+                var rightd = { 'num' : 0};
+                
+                adj_exist(i, j, 0, ch, up);
+                adj_exist(i, j, 1, ch, right);
+                adj_exist(i, j, 2, ch, rightu);
+                adj_exist(i, j, 3, ch, rightd);
+
+                if (up.num >= 5 || right.num >= 5 || rightu.num >= 5 || rightd.num >= 5) {
+                    return true;
+                }
+            }
         }
     }
     return false;
@@ -153,7 +190,6 @@ var play_gomoku = function(_bot, message, user1, user2, _callback) {
     bot.on('message', f);
     set_timeout(message, f);
 }
-
 module.exports = {
     play_gomoku : play_gomoku
 };
