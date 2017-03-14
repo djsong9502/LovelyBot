@@ -64,7 +64,8 @@ var f = function(message) {
             if (message.content === 'yes') {
                 message.channel.sendMessage('Draw game!');
                 bot.removeListener('message', g);
-                bot.removeListener('message', f)
+                bot.removeListener('message', f);
+                remove_timeout();
                 callback();
                 return; 
             } else {
@@ -93,6 +94,7 @@ var f = function(message) {
                 message.channel.sendMessage(board_in_string());
                 message.channel.sendMessage('<@{0}>\ won the game. Congratlations!'.format(player1));
                 bot.removeListener('message', f);
+                remove_timeout();
                 callback();
                 return;
             }
@@ -112,6 +114,7 @@ var f = function(message) {
                 message.channel.sendMessage(board_in_string());
                 message.channel.sendMessage('<@{0}>\ won the game. Congratlations!'.format(player2));
                 bot.removeListener('message', f);
+                remove_timeout();
                 callback();
                 return;
             }
