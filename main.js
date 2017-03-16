@@ -313,7 +313,7 @@ bot.on('message', message => {
             'Goal of this game is to get closer to 21 points than the dealer without going over. In each round,' + 
             'you can either hit/stand. If you hit, you get another card. If you stand, it means you are done. ' +
             'A is worth either 1 or 11 points (depending on if you go over 21 or not) All the face cards are worth 10 points.\n\n' +
-            'List the commands you can use during the game\n' + 
+            'List of commands you can use during the game\n' + 
             ' hit -> continue receiving cards.\n' +
             ' stand -> stop receiving cards and calculate score.\n' + 
             ' score -> get current score\n```' 
@@ -327,7 +327,7 @@ bot.on('message', message => {
             'You can connect your pieces either horizontally, vertically, or diagonally. To place your piece, type two ' +
             'letters corresponding to the coordinates starting with left then bottom. ' + 
             '(Ex, kj places in k on left coordinate and j on bottom coordinate.\n\n' +
-            'List the commands you can use during the game\n' + 
+            'List of commands you can use during the game\n' + 
             ' board -> show current board\n' +
             ' quit -> resign the game\n' + 
             ' draw -> request a draw game to the user\n```' 
