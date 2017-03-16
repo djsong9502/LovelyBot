@@ -210,7 +210,7 @@ module.exports = {
                                 var value = type === 'geng' ? 100 : 30;
                                  credits_collection.update(
                                     { user: user },
-                                    { $inc: { credit: Math.floor(number*100*Math.pow(1.05, number-1)) } },
+                                    { $inc: { credit: Math.floor(number*100*Math.pow(1.01, number-1)) } },
                                     { upsert: true },
                                      function(e, result) {
                                         db.close();

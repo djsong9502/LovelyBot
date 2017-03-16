@@ -91,7 +91,7 @@ bot.on('message', message => {
     }
 
     if (message.content === '{0}geng'.format(command_prefix)) {
-        var random_number = Math.floor(Math.random()*(20+1)) + 1;
+        var random_number = Math.floor(Math.random()*(100+1)) + 1;
         if (random_number === 1) {
             db.update_user_points('geng', message.author.id, 1, function(e, result) {
                 if (e) {
@@ -123,7 +123,7 @@ bot.on('message', message => {
     }
 
     if (message.content === '{0}nong'.format(command_prefix)) {
-        var random_number = Math.floor(Math.random()*(10+1)) + 1;
+        var random_number = Math.floor(Math.random()*(20+1)) + 1;
         var nong = 'n';
         for(i = 0; i < random_number; i++) {
             nong += 'o'
