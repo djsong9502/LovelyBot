@@ -59,8 +59,8 @@ var play_blackjack = function(bot, message, amount, callback) {
             }
 
             if (user_points === 21) {
-                message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `{3}` credits.'.format(random_num, random_suit, user_points, amount*4));
-                db.update_credits(message.author.id, amount*4, function(e) {
+                message.channel.sendMessage('{0}{1} You got `{2}` exactly!!! You received `{3}` credits.'.format(random_num, random_suit, user_points, amount*2));
+                db.update_credits(message.author.id, amount*2, function(e) {
                     if (e) {
                         console.log(e);
                         message.channel.sendMessage('An error has occurred. Please check the logs <@185885180408496128>');
