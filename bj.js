@@ -102,16 +102,16 @@ var play_blackjack = function(bot, message, amount, callback) {
         if (message.content === 'stand') {
             var win = 0;
             if (dealer_score == 22) {
-                message.channel.sendMessage('You got `{0}` but dealer busted. You win {1} credits!'.format(user_points, Math.floor(amount/4)));
-                win = Math.floor(amount/4);
+                message.channel.sendMessage('You got `{0}` but dealer busted. You win {1} credits!'.format(user_points, Math.floor(amount/3)));
+                win = Math.floor(amount/3);
             } else if (dealer_score > user_points) {
                 message.channel.sendMessage('You got `{0}` but dealer got `{1}`. You lost {2} credits.'.format(user_points, dealer_score, Math.floor(amount/2)));
-                win = -1 * Math.floow(amount/2);
+                win = -1 * Math.floor(amount/2);
             } else if (dealer_score === user_points) {
                 message.channel.sendMessage('You got `{0}` but dealer also got `{1}`. No credits lost.'.format(user_points, dealer_score));
             } else {
-                message.channel.sendMessage('You got `{0}` and dealer got `{1}`. You win {2} credits.'.format(user_points, dealer_score, Math.floor(amount/4)));
-                win = Math.floor(amount/4);
+                message.channel.sendMessage('You got `{0}` and dealer got `{1}`. You win {2} credits.'.format(user_points, dealer_score, Math.floor(amount/3)));
+                win = Math.floor(amount/3);
             }
 
             db.update_credits(message.author.id, win, function(e) {
